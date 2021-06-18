@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2021 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * The Universal Permissive License (UPL), Version 1.0
@@ -38,36 +38,15 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package com.example.project;
+package org.graalvm.junit.jupiter;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Nested;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInfo;
+import org.graalvm.junit.util.Calculator;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 
-class CalculatorTests {
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-    CalculatorTests(TestInfo info) {
-        System.out.println("Running test: " + info.getDisplayName());
-    }
-
-    @Test
-    @DisplayName("1 + 1 = 2")
-    void addsTwoNumbers() {
-        Calculator calculator = new Calculator();
-        assertEquals(2, calculator.add(1, 1), "1 + 1 should equal 2");
-    }
-
-    @Test
-    @DisplayName("1 + 2 = 3")
-    void addsTwoNumbers2() {
-        Calculator calculator = new Calculator();
-        assertEquals(3, calculator.add(1, 2), "1 + 2 should equal 3");
-    }
+public class CsvSourceTest {
 
     @ParameterizedTest(name = "{0} + {1} = {2}")
     @CsvSource({
@@ -82,33 +61,4 @@ class CalculatorTests {
                 () -> first + " + " + second + " should equal " + expectedResult);
     }
 
-    @Nested
-    class NestedTest {
-
-        NestedTest(TestInfo info) {
-            System.out.println("Running nested test: " + info.getDisplayName());
-        }
-
-        @Test
-        @DisplayName("3 + 2 = 5, from a nested test class")
-        void addsTwoNumbersButNested() {
-            Calculator calculator = new Calculator();
-            assertEquals(5, calculator.add(3, 2));
-        }
-
-        @Nested
-        class NestedNestedTest {
-
-            NestedNestedTest(TestInfo info) {
-                System.out.println("Running nested nested test: " + info.getDisplayName());
-            }
-
-            @Test
-            @DisplayName("3 + 2 = 5, from a nested nested test class")
-            void addsTwoNumbersButNested() {
-                Calculator calculator = new Calculator();
-                assertEquals(5, calculator.add(3, 2));
-            }
-        }
-    }
 }

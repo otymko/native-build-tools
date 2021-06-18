@@ -40,10 +40,11 @@
  */
 package org.graalvm.junit.platform;
 
+import org.graalvm.junit.platform.config.NativeImageConfigurationImpl;
+import org.graalvm.junit.platform.config.core.PluginConfigProvider;
 import org.graalvm.nativeimage.ImageSingletons;
 import org.graalvm.nativeimage.hosted.Feature;
 import org.graalvm.nativeimage.hosted.RuntimeClassInitialization;
-import org.graalvm.nativeimage.hosted.RuntimeReflection;
 import org.junit.platform.engine.DiscoverySelector;
 import org.junit.platform.engine.discovery.DiscoverySelectors;
 import org.junit.platform.engine.support.descriptor.ClassSource;
@@ -60,58 +61,29 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
 import java.nio.file.Path;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.ServiceLoader;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 @SuppressWarnings("unused")
 public final class JUnitPlatformFeature implements Feature {
 
-    final boolean debug = System.getProperty("debug") != null;
+    public final boolean debug = System.getProperty("debug") != null;
+
+    private static final NativeImageConfigurationImpl nativeImageConfigImpl = new NativeImageConfigurationImpl();
+    private final ServiceLoader<PluginConfigProvider> extensionConfigProviders = ServiceLoader.load(PluginConfigProvider.class);
 
     @Override
     public void duringSetup(DuringSetupAccess access) {
-        try {
-            RuntimeReflection.register(org.junit.platform.commons.annotation.Testable.class.getMethods());
-            RuntimeReflection.register(Class.forName("org.junit.jupiter.params.ParameterizedTestExtension").getDeclaredMethods());
-            RuntimeReflection.registerForReflectiveInstantiation(Class.forName("org.junit.jupiter.params.ParameterizedTestExtension"));
-            RuntimeReflection.register(Class.forName("org.junit.jupiter.params.provider.CsvArgumentsProvider").getMethods());
-            RuntimeReflection.register(Class.forName("org.junit.jupiter.params.provider.CsvArgumentsProvider").getDeclaredMethods());
-            RuntimeReflection.registerForReflectiveInstantiation(Class.forName("org.junit.jupiter.params.provider.CsvArgumentsProvider"));
-        } catch (ClassNotFoundException e) {
-            throw new RuntimeException("Missing some JUnit Platform classes for runtime reflection configuration. \n" +
-                    "Check if JUnit Platform is on your classpath or if that version is supported. \n" +
-                    "Original error: " + e);
-        }
+        forEachProvider(p -> p.onLoad(nativeImageConfigImpl));
     }
 
     @Override
     public void beforeAnalysis(BeforeAnalysisAccess access) {
-        RuntimeClassInitialization.initializeAtBuildTime("org.junit.vintage.engine.support.UniqueIdReader");
-        RuntimeClassInitialization.initializeAtBuildTime("org.junit.vintage.engine.support.UniqueIdStringifier");
-        RuntimeClassInitialization.initializeAtBuildTime("org.junit.platform.launcher.core.InternalTestPlan");
-        RuntimeClassInitialization.initializeAtBuildTime("org.junit.platform.commons.util.StringUtils");
-        RuntimeClassInitialization.initializeAtBuildTime("org.junit.platform.launcher.core.TestExecutionListenerRegistry");
-        RuntimeClassInitialization.initializeAtBuildTime("org.junit.platform.commons.logging.LoggerFactory$DelegatingLogger");
-        RuntimeClassInitialization.initializeAtBuildTime("org.junit.platform.launcher.core.EngineDiscoveryOrchestrator");
-        RuntimeClassInitialization.initializeAtBuildTime("org.junit.platform.launcher.core.LauncherConfigurationParameters");
-        RuntimeClassInitialization.initializeAtBuildTime("org.junit.platform.commons.logging.LoggerFactory");
-        RuntimeClassInitialization.initializeAtBuildTime("org.junit.jupiter.engine.config.EnumConfigurationParameterConverter");
-        RuntimeClassInitialization.initializeAtBuildTime("org.junit.jupiter.engine.descriptor.ClassTestDescriptor");
-        RuntimeClassInitialization.initializeAtBuildTime("org.junit.jupiter.engine.descriptor.ClassBasedTestDescriptor");
-        RuntimeClassInitialization.initializeAtBuildTime("org.junit.jupiter.engine.descriptor.TestFactoryTestDescriptor");
-        RuntimeClassInitialization.initializeAtBuildTime("org.junit.platform.engine.UniqueIdFormat");
-        RuntimeClassInitialization.initializeAtBuildTime("org.junit.jupiter.engine.descriptor.JupiterTestDescriptor");
-        RuntimeClassInitialization.initializeAtBuildTime("org.junit.jupiter.engine.descriptor.MethodBasedTestDescriptor");
-        RuntimeClassInitialization.initializeAtBuildTime("org.junit.jupiter.engine.descriptor.TestMethodTestDescriptor");
-        RuntimeClassInitialization.initializeAtBuildTime("org.junit.platform.commons.util.ReflectionUtils");
-        RuntimeClassInitialization.initializeAtBuildTime("org.junit.jupiter.engine.descriptor.TestTemplateTestDescriptor");
-        RuntimeClassInitialization.initializeAtBuildTime("org.junit.jupiter.engine.execution.ConditionEvaluator");
-        RuntimeClassInitialization.initializeAtBuildTime("org.junit.jupiter.engine.execution.ExecutableInvoker");
         RuntimeClassInitialization.initializeAtBuildTime(NativeImageJUnitLauncher.class);
 
         Launcher launcher = LauncherFactory.create();
@@ -166,13 +138,13 @@ public final class JUnitPlatformFeature implements Feature {
         if (debug) {
             System.out.println("[Debug] Registering test class for reflection: " + clazz.getName());
         }
-        RuntimeReflection.register(clazz.getDeclaredConstructors());
+        nativeImageConfigImpl.registerAllClassMembersForReflection(clazz);
+        forEachProvider(p -> p.onTestClassRegistered(clazz, nativeImageConfigImpl));
+    }
 
-        for (Field field : clazz.getDeclaredFields()) {
-            RuntimeReflection.register(field);
-        }
-        for (Method method : clazz.getDeclaredMethods()) {
-            RuntimeReflection.register(method);
+    private void forEachProvider(Consumer<PluginConfigProvider> consumer) {
+        for (PluginConfigProvider provider: extensionConfigProviders) {
+            consumer.accept(provider);
         }
     }
 }

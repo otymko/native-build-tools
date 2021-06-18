@@ -38,12 +38,33 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package com.example.project;
+package org.graalvm.junit.jupiter;
 
-public class Calculator {
+import org.graalvm.junit.util.Calculator;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInfo;
 
-    public int add(int a, int b) {
-        return a + b;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+class BasicTests {
+
+    BasicTests(TestInfo info) {
+        System.out.println("Running test: " + info.getDisplayName());
+    }
+
+    @Test
+    @DisplayName("1 + 1 = 2")
+    void addsTwoNumbers() {
+        Calculator calculator = new Calculator();
+        assertEquals(2, calculator.add(1, 1), "1 + 1 should equal 2");
+    }
+
+    @Test
+    @DisplayName("1 + 2 = 3")
+    void addsTwoNumbers2() {
+        Calculator calculator = new Calculator();
+        assertEquals(3, calculator.add(1, 2), "1 + 2 should equal 3");
     }
 
 }
