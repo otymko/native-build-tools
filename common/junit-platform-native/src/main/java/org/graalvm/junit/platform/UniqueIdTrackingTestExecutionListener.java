@@ -72,7 +72,16 @@ public class UniqueIdTrackingTestExecutionListener implements TestExecutionListe
     private final List<String> uniqueIds = new ArrayList<>();
 
     @Override
+    public void executionSkipped(TestIdentifier testIdentifier, String reason) {
+        addTest(testIdentifier);
+    }
+
+    @Override
     public void executionFinished(TestIdentifier testIdentifier, TestExecutionResult testExecutionResult) {
+        addTest(testIdentifier);
+    }
+
+    private void addTest(TestIdentifier testIdentifier) {
         if (testIdentifier.isTest()) {
             this.uniqueIds.add(testIdentifier.getUniqueId());
         }

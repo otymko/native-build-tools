@@ -68,9 +68,18 @@ public class PrintTestExecutionListener implements TestExecutionListener {
     }
 
     @Override
+    public void executionSkipped(TestIdentifier testIdentifier, String reason) {
+        printTest(testIdentifier, "SKIPPED: " + reason);
+    }
+
+    @Override
     public void executionFinished(TestIdentifier testIdentifier, TestExecutionResult testExecutionResult) {
+        printTest(testIdentifier, testExecutionResult.getStatus().name());
+    }
+
+    private void printTest(TestIdentifier testIdentifier, String status) {
         if (testIdentifier.getParentId().isPresent() && !testIdentifier.isContainer()) {
-            out.println(LegacyReportingUtils.getClassName(testPlan, testIdentifier) + " > " + testIdentifier.getDisplayName() + " " + testExecutionResult.getStatus().name() + "\n");
+            out.println(LegacyReportingUtils.getClassName(testPlan, testIdentifier) + " > " + testIdentifier.getDisplayName() + " " + status + "\n");
         }
     }
 }
