@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2021 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * The Universal Permissive License (UPL), Version 1.0
@@ -38,27 +38,65 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.graalvm.junit.util;
+package org.graalvm.junit.jupiter;
 
-import org.junit.jupiter.api.Assertions;
+import org.graalvm.junit.util.Calculator;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
-public class Calculator {
+import java.util.stream.Stream;
 
-    public static void testAddition(int a, int b) {
-        Calculator calculator = new Calculator();
-        int expected = a + b;
-        int result = calculator.add(a, b);
-        Assertions.assertEquals(expected, result);
+public class MethodSourceTests {
+
+    @ParameterizedTest
+    @MethodSource
+    public void testEmptyMethodSource(int a, int b) {
+        Calculator.testAddition(a, b);
     }
 
-    public static void testAddition(int a, int b, int expected) {
-        Calculator calculator = new Calculator();
-        int result = calculator.add(a, b);
-        Assertions.assertEquals(expected, result);
+    public static Stream<Arguments> testEmptyMethodSource() {
+        return Stream.of(
+                Arguments.of(1, 5),
+                Arguments.of(7, 12),
+                Arguments.of(9, 3)
+        );
     }
 
-    public int add(int a, int b) {
-        return a + b;
+    @ParameterizedTest
+    @MethodSource("getTestInputs")
+    public void testSameClassMethodSource(int a, int b) {
+        Calculator.testAddition(a, b);
+    }
+
+    private static Stream<Arguments> getTestInputs() {
+        return Stream.of(
+                Arguments.of(31, 32),
+                Arguments.of(1, 1),
+                Arguments.of(5, 7)
+        );
+    }
+
+    @ParameterizedTest
+    @MethodSource("org.graalvm.junit.jupiter.MethodSourceProvider#getInputs")
+    public void testOtherClassMethodSource(int a, int b) {
+        Calculator.testAddition(a, b);
+    }
+
+    @ParameterizedTest
+    @MethodSource({"org.graalvm.junit.jupiter.MethodSourceProvider#getInputs", "getTestInputs", "org.graalvm.junit.jupiter.MethodSourceTests#testEmptyMethodSource"})
+    public void combinedTests(int a, int b) {
+        Calculator.testAddition(a, b);
+    }
+}
+
+class MethodSourceProvider {
+
+    public static Stream<Arguments> getInputs() {
+        return Stream.of(
+                Arguments.of(33, 35),
+                Arguments.of(99, 1)
+        );
     }
 
 }

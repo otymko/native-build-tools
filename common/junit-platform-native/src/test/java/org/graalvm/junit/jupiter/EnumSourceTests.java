@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2021 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * The Universal Permissive License (UPL), Version 1.0
@@ -38,27 +38,36 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.graalvm.junit.util;
+package org.graalvm.junit.jupiter;
 
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 
-public class Calculator {
+public class EnumSourceTests {
 
-    public static void testAddition(int a, int b) {
-        Calculator calculator = new Calculator();
-        int expected = a + b;
-        int result = calculator.add(a, b);
-        Assertions.assertEquals(expected, result);
+    enum Color {
+        RED,
+        GREEN,
+        BLUE
     }
 
-    public static void testAddition(int a, int b, int expected) {
-        Calculator calculator = new Calculator();
-        int result = calculator.add(a, b);
-        Assertions.assertEquals(expected, result);
+    enum Day {
+        MONDAY,
+        TUESDAY,
+        FRIDAY
     }
 
-    public int add(int a, int b) {
-        return a + b;
+    @ParameterizedTest
+    @EnumSource
+    public void testEnumSourceWithoutArguments(Color color) {
+        Assertions.assertNotNull(color);
+    }
+
+    @ParameterizedTest
+    @EnumSource(value = Day.class)
+    public void testEnumSourceWithArguments(Day day) {
+        Assertions.assertNotNull(day);
     }
 
 }

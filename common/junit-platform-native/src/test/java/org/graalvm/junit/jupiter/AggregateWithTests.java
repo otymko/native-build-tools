@@ -38,49 +38,63 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.graalvm.junit.platform.config;
+package org.graalvm.junit.jupiter;
 
-import org.graalvm.junit.platform.JUnitPlatformFeature;
-import org.graalvm.junit.platform.config.core.NativeImageConfiguration;
-import org.graalvm.nativeimage.ImageSingletons;
-import org.graalvm.nativeimage.hosted.RuntimeClassInitialization;
-import org.graalvm.nativeimage.hosted.RuntimeReflection;
+import org.graalvm.junit.util.Calculator;
+import org.junit.jupiter.api.extension.ParameterContext;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.aggregator.AggregateWith;
+import org.junit.jupiter.params.aggregator.ArgumentsAccessor;
+import org.junit.jupiter.params.aggregator.ArgumentsAggregationException;
+import org.junit.jupiter.params.aggregator.ArgumentsAggregator;
+import org.junit.jupiter.params.provider.CsvSource;
 
-import java.lang.reflect.Executable;
-import java.lang.reflect.Field;
+public class AggregateWithTests {
 
-public class NativeImageConfigurationImpl extends NativeImageConfiguration {
-
-    @Override
-    public void registerForReflection(Class<?>... classes) {
-        RuntimeReflection.register(classes);
+    @ParameterizedTest(name = "{0} + {1} = {2}")
+    @CsvSource({
+            "0,    1,   1",
+            "1,    2,   3",
+            "49,  51, 100",
+            "1,  100, 101"
+    })
+    public void testAggregateWith(@AggregateWith(AdditionTestArgumentsAggregator.class) AdditionTest test) {
+        Calculator.testAddition(test.a, test.b, test.result);
     }
 
-    @Override
-    public void registerForReflection(Executable... methods) {
-        RuntimeReflection.register(methods);
+    @ParameterizedTest(name = "{0} + {1} = {2}, {3} + {4} = {5}")
+    @CsvSource({
+            "0,    1,   1,   1,    2,   3",
+            "49,  51, 100,   1,  100, 101"
+    })
+    public void testAggregateWith(@AggregateWith(AdditionTestArgumentsAggregator.class) AdditionTest testOne, @AggregateWith(AdditionTestArgumentsAggregator.class) AdditionTest testTwo) {
+        Calculator.testAddition(testOne.a, testOne.b, testOne.result);
+        Calculator.testAddition(testTwo.a, testTwo.b, testTwo.result);
     }
 
-    @Override
-    public void registerForReflection(Field... fields) {
-        RuntimeReflection.register(fields);
-    }
+}
+
+class AdditionTestArgumentsAggregator implements ArgumentsAggregator {
 
     @Override
-    public void initializeAtBuildTime(String... classNames) {
-        for (String className : classNames) {
-            Class<?> clazz;
-            try {
-                clazz = Class.forName(className);
-                initializeAtBuildTime(clazz);
-            } catch (ClassNotFoundException e) {
-                JUnitPlatformFeature.debug(" [Native Image Configuration] Failed to register class for build time initialization: %s Reason: %s", className, e);
-            }
-        }
+    public Object aggregateArguments(ArgumentsAccessor accessor, ParameterContext context) throws ArgumentsAggregationException {
+        int offset = context.getIndex() * 3;
+        int a = accessor.getInteger(offset);
+        int b = accessor.getInteger(offset + 1);
+        int result = accessor.getInteger(offset + 2);
+        return new AdditionTest(a, b, result);
     }
+}
 
-    @Override
-    public void initializeAtBuildTime(Class<?>... classes) {
-        RuntimeClassInitialization.initializeAtBuildTime(classes);
+class AdditionTest {
+
+    public final int a;
+    public final int b;
+    public final int result;
+
+    AdditionTest(int a, int b, int result) {
+        this.a = a;
+        this.b = b;
+        this.result = result;
     }
 }

@@ -44,33 +44,75 @@ import org.graalvm.junit.platform.config.core.NativeImageConfiguration;
 import org.junit.platform.commons.support.AnnotationSupport;
 
 import java.lang.annotation.Annotation;
+import java.lang.annotation.Repeatable;
+import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Method;
+import java.lang.reflect.Parameter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
 public class AnnotationUtils {
 
-    public static <A extends Annotation> void forEachRepeatableAnnotationOnClassMembers(Class<?> clazz, Class<A> annotationType, Consumer<A> consumer) {
-        List<A> annotations = new ArrayList<>(AnnotationSupport.findRepeatableAnnotations(clazz, annotationType));
+    public static <A extends Annotation> void forEachAnnotationOnClassMembers(Class<?> clazz, Class<A> annotationType, Consumer<A> consumer) {
+        for (A annotation : getAnnotations(clazz, annotationType)) {
+            consumer.accept(annotation);
+        }
+
+        forEachMethod(clazz, method -> {
+            for (A annotation : getAnnotations(method, annotationType)) {
+                consumer.accept(annotation);
+            }
+        });
+    }
+
+    public static <A extends Annotation> void forEachAnnotatedMethod(Class<?> clazz, Class<A> annotationType, BiConsumer<Method, A> consumer) {
+        forEachMethod(clazz, method -> {
+            for (A annotation : getAnnotations(method, annotationType)) {
+                consumer.accept(method, annotation);
+            }
+        });
+    }
+
+    public static <A extends Annotation> void forEachAnnotatedMethodParameter(Class<?> clazz, Class<A> annotationType, Consumer<A> consumer) {
+        forEachMethod(clazz, method -> {
+            for (Parameter parameter : method.getParameters()) {
+                for (A annotation: getAnnotations(parameter, annotationType)) {
+                    consumer.accept(annotation);
+                }
+            }
+        });
+    }
+
+    private static void forEachMethod(Class<?> clazz, Consumer<Method> consumer) {
         Set<Method> methods = new HashSet<>();
         methods.addAll(Arrays.asList(clazz.getDeclaredMethods()));
         methods.addAll(Arrays.asList(clazz.getMethods()));
-        for (Method m: methods) {
-            annotations.addAll(AnnotationSupport.findRepeatableAnnotations(m, annotationType));
-        }
-
-        for (A annotation : annotations) {
-            consumer.accept(annotation);
+        for (Method method : methods) {
+            consumer.accept(method);
         }
     }
 
+    private static <A extends Annotation> List<A> getAnnotations(AnnotatedElement element, Class<A> annotation) {
+        if (annotation.getAnnotation(Repeatable.class) != null) {
+            return AnnotationSupport.findRepeatableAnnotations(element, annotation);
+        } else {
+            Optional<A> optionalAnnotation = AnnotationSupport.findAnnotation(element, annotation);
+            List<A> annotationList = new ArrayList<>();
+            optionalAnnotation.ifPresent(annotationList::add);
+            return annotationList;
+        }
+
+    }
+
     public static <T extends Annotation> void registerClassesFromAnnotationForReflection(Class<?> testClass, NativeImageConfiguration config, Class<T> annotation, Function<T, Class<?>[]> classProvider) {
-        forEachRepeatableAnnotationOnClassMembers(testClass, annotation, a -> {
+        forEachAnnotationOnClassMembers(testClass, annotation, a -> {
             Class<?>[] reflectivelyAccessedClasses = classProvider.apply(a);
             config.registerAllClassMembersForReflection(reflectivelyAccessedClasses);
         });

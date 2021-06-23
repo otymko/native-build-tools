@@ -41,24 +41,46 @@
 package org.graalvm.junit.jupiter;
 
 import org.graalvm.junit.util.Calculator;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.api.DisplayNameGeneration;
+import org.junit.jupiter.api.DisplayNameGenerator;
+import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
+public class DisplayNameGenerationTests {
 
-public class CsvSourceTest {
 
-    @ParameterizedTest(name = "{0} + {1} = {2}")
-    @CsvSource({
-            "0,    1,   1",
-            "1,    2,   3",
-            "49,  51, 100",
-            "1,  100, 101"
-    })
-    void add(int first, int second, int expectedResult) {
-        Calculator calculator = new Calculator();
-        assertEquals(expectedResult, calculator.add(first, second),
-                () -> first + " + " + second + " should equal " + expectedResult);
+    @DisplayNameGeneration(DisplayNameGenerator.Standard.class)
+    public static class StandardGenerator {
+
+        @Test
+        public void testOne() {
+            Calculator.testAddition(1, 1);
+        }
     }
 
+    @DisplayNameGeneration(DisplayNameGenerator.Simple.class)
+    public static class SimpleGenerator {
+
+        @Test
+        public void testOne() {
+            Calculator.testAddition(2, 2);
+        }
+    }
+
+    @DisplayNameGeneration(DisplayNameGenerator.IndicativeSentences.class)
+    public static class IndicativeSentencesGenerator {
+
+        @Test
+        public void testOne() {
+            Calculator.testAddition(3, 3);
+        }
+    }
+
+    @DisplayNameGeneration(DisplayNameGenerator.ReplaceUnderscores.class)
+    public static class ReplaceUnderscoresGenerator {
+
+        @Test
+        public void testOne() {
+            Calculator.testAddition(4, 4);
+        }
+    }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2021 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * The Universal Permissive License (UPL), Version 1.0
@@ -38,27 +38,35 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.graalvm.junit.util;
+package org.graalvm.junit.jupiter;
 
-import org.junit.jupiter.api.Assertions;
+import org.graalvm.junit.util.Calculator;
+import org.junit.jupiter.api.extension.ParameterContext;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.converter.ArgumentConversionException;
+import org.junit.jupiter.params.converter.ArgumentConverter;
+import org.junit.jupiter.params.converter.ConvertWith;
+import org.junit.jupiter.params.provider.CsvSource;
 
-public class Calculator {
+public class ConvertWithTests {
 
-    public static void testAddition(int a, int b) {
-        Calculator calculator = new Calculator();
-        int expected = a + b;
-        int result = calculator.add(a, b);
-        Assertions.assertEquals(expected, result);
+    @ParameterizedTest(name = "{0} + {1} = {2}")
+    @CsvSource({
+            "0.50,   1.30,   1.132",
+            "1.40,   2.11,   3.21",
+            "49.4,  51.52,   100.6",
+            "1.31,  100.3,   101"
+    })
+    public void testConverters(@ConvertWith(IntArgumentConverter.class) int a, @ConvertWith(IntArgumentConverter.class) int b, @ConvertWith(IntArgumentConverter.class) int result) {
+        Calculator.testAddition(a, b, result);
     }
 
-    public static void testAddition(int a, int b, int expected) {
-        Calculator calculator = new Calculator();
-        int result = calculator.add(a, b);
-        Assertions.assertEquals(expected, result);
-    }
+}
 
-    public int add(int a, int b) {
-        return a + b;
-    }
+class IntArgumentConverter implements ArgumentConverter {
 
+    @Override
+    public Object convert(Object source, ParameterContext context) throws ArgumentConversionException {
+        return (int) Math.floor(Double.parseDouble((String) source));
+    }
 }

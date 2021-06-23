@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2021 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * The Universal Permissive License (UPL), Version 1.0
@@ -38,27 +38,74 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.graalvm.junit.util;
+package org.graalvm.junit.jupiter;
 
-import org.junit.jupiter.api.Assertions;
+import org.graalvm.junit.util.Calculator;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.MethodOrderer;
+import org.junit.jupiter.api.Order;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestMethodOrder;
 
-public class Calculator {
+public class TestMethodOrderTests {
 
-    public static void testAddition(int a, int b) {
-        Calculator calculator = new Calculator();
-        int expected = a + b;
-        int result = calculator.add(a, b);
-        Assertions.assertEquals(expected, result);
+    @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
+    public static class ArgumentOrderer {
+
+        @Test
+        @Order(2)
+        public void testTwo() {
+            Calculator.testAddition(2, 5);
+        }
+
+        @Test
+        @Order(1)
+        public void testOne() {
+            Calculator.testAddition(9, 1);
+        }
     }
 
-    public static void testAddition(int a, int b, int expected) {
-        Calculator calculator = new Calculator();
-        int result = calculator.add(a, b);
-        Assertions.assertEquals(expected, result);
+    @TestMethodOrder(MethodOrderer.DisplayName.class)
+    public static class DisplayNameOrderer {
+
+        @Test
+        @DisplayName("B - I must be second")
+        public void testTwo() {
+            Calculator.testAddition(3, 5);
+        }
+
+        @Test
+        @DisplayName("A - I must be first")
+        public void testOne() {
+            Calculator.testAddition(1, 1);
+        }
     }
 
-    public int add(int a, int b) {
-        return a + b;
+    @TestMethodOrder(MethodOrderer.MethodName.class)
+    public static class MethodNameOrderer {
+
+        @Test
+        public void testB() {
+            Calculator.testAddition(1, 7);
+        }
+
+        @Test
+        public void testA() {
+            Calculator.testAddition(0, 1);
+        }
     }
 
+    @TestMethodOrder(MethodOrderer.Random.class)
+    public static class RandomOrderer {
+
+        @Test
+        public void testOne() {
+            Calculator.testAddition(2, 5);
+        }
+
+        @Test
+        public void testTwo() {
+            Calculator.testAddition(50, 51);
+        }
+    }
 }

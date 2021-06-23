@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2021 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * The Universal Permissive License (UPL), Version 1.0
@@ -38,27 +38,27 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package org.graalvm.junit.util;
+package org.graalvm.junit.jupiter;
 
-import org.junit.jupiter.api.Assertions;
+import org.graalvm.junit.util.Calculator;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 
-public class Calculator {
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-    public static void testAddition(int a, int b) {
+public class CsvSourceTests {
+
+    @ParameterizedTest(name = "{0} + {1} = {2}")
+    @CsvSource({
+            "0,    1,   1",
+            "1,    2,   3",
+            "49,  51, 100",
+            "1,  100, 101"
+    })
+    void add(int first, int second, int expectedResult) {
         Calculator calculator = new Calculator();
-        int expected = a + b;
-        int result = calculator.add(a, b);
-        Assertions.assertEquals(expected, result);
-    }
-
-    public static void testAddition(int a, int b, int expected) {
-        Calculator calculator = new Calculator();
-        int result = calculator.add(a, b);
-        Assertions.assertEquals(expected, result);
-    }
-
-    public int add(int a, int b) {
-        return a + b;
+        assertEquals(expectedResult, calculator.add(first, second),
+                () -> first + " + " + second + " should equal " + expectedResult);
     }
 
 }

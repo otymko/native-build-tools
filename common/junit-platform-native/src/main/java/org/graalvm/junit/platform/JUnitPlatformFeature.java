@@ -108,7 +108,7 @@ public final class JUnitPlatformFeature implements Feature {
 
         // Run a a junit launcher to discover tests and register classes for reflection
         if (debug) {
-            classpath.forEach(path -> System.out.println("[Debug] Found classpath: " + path));
+            classpath.forEach(path -> debug("Found classpath: " + path));
         }
         return DiscoverySelectors.selectClasspathRoots(new HashSet<>(classpath));
 
@@ -135,16 +135,24 @@ public final class JUnitPlatformFeature implements Feature {
     }
 
     private void registerTestClassForReflection(Class<?> clazz) {
-        if (debug) {
-            System.out.println("[Debug] Registering test class for reflection: " + clazz.getName());
-        }
+        debug("Registering test class for reflection: %s", clazz.getName());
         nativeImageConfigImpl.registerAllClassMembersForReflection(clazz);
         forEachProvider(p -> p.onTestClassRegistered(clazz, nativeImageConfigImpl));
     }
 
     private void forEachProvider(Consumer<PluginConfigProvider> consumer) {
-        for (PluginConfigProvider provider: extensionConfigProviders) {
+        for (PluginConfigProvider provider : extensionConfigProviders) {
             consumer.accept(provider);
         }
+    }
+
+    public static void debug(String format, Object... args) {
+        if (debug()) {
+            System.out.printf("[Debug] " + format + "%n", args);
+        }
+    }
+
+    public static boolean debug() {
+        return ImageSingletons.lookup(JUnitPlatformFeature.class).debug;
     }
 }
