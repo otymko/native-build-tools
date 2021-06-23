@@ -65,7 +65,9 @@ public class PlatformConfigProvider implements PluginConfigProvider {
         try {
             registry.registerForReflection(Class.forName("org.junit.platform.commons.annotation.Testable").getMethods());
         } catch (ClassNotFoundException e) {
-            System.out.println("Failed to register class org.junit.platform.commons.annotation.Testable for reflection: " + e);
+            throw new RuntimeException("Missing some JUnit Platform classes for runtime reflection configuration. \n" +
+                    "Check if JUnit Platform is on your classpath or if that version is supported. \n" +
+                    "Original error: " + e);
         }
     }
 
